@@ -378,7 +378,7 @@
         }
 
         function loadFromBackup() {
-            const backupUrl = 'https://echarts-www.cdn.bcebos.com/zh/asset/map/json/china.json';
+            const backupUrl = './china.json';
             fetch(backupUrl)
                 .then(response => response.json())
                 .then(data => {
