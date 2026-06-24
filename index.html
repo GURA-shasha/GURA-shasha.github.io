@@ -1,109 +1,234 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 针对苹果手机优化：禁止系统级缩放，防止地图滑动时页面跟着放大 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>中国各省地图 - 天地图</title>
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; overflow: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+        }
 
         #header {
             background: linear-gradient(135deg, #1a3a5c 0%, #2d6da3 100%);
-            color: white; padding: 12px 20px; display: flex; align-items: center;
-            justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            z-index: 1000; position: relative;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            position: relative;
         }
-        #header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+
+        #header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
         #header .current-location {
-            font-size: 14px; background: rgba(255,255,255,0.15);
-            padding: 6px 16px; border-radius: 20px; backdrop-filter: blur(4px);
+            font-size: 14px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
         }
 
-        #map { width: 100%; height: calc(100vh - 52px); }
+        #map {
+            width: 100%;
+            height: calc(100vh - 52px);
+        }
 
-        /* 鼠标悬停省份时显示小手，提示可点击 */
-        .leaflet-interactive:hover { cursor: pointer; }
-
+        /* 省份标签样式 */
         .province-label {
-            background: none !important; border: none !important; box-shadow: none !important;
-            font-size: 11px; font-weight: bold; color: #2c3e50; white-space: nowrap;
-            text-shadow: 1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white;
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 11px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: 
+                1px 1px 2px white,
+                -1px -1px 2px white,
+                1px -1px 2px white,
+                -1px 1px 2px white;
+            white-space: nowrap;
         }
 
-        .back-btn {
-            position: absolute; top: 70px; left: 15px; z-index: 1000; background: white;
-            border: none; padding: 10px 18px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            cursor: pointer; font-size: 14px; font-weight: bold; color: #1a3a5c;
-            display: none; transition: all 0.3s ease;
-        }
-        .back-btn:hover { background: #1a3a5c; color: white; transform: scale(1.05); }
-
-        .legend {
-            position: absolute; bottom: 30px; right: 15px; z-index: 1000; background: white;
-            padding: 12px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            font-size: 12px; line-height: 2;
-        }
-        .legend-title { font-weight: bold; margin-bottom: 4px; color: #1a3a5c; }
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .legend-color { width: 20px; height: 12px; border-radius: 2px; border: 1px solid #999; }
-
-        .loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); display: flex; align-items: center;
-            justify-content: center; z-index: 9999; flex-direction: column; gap: 16px;
-        }
-        .loading-spinner {
-            width: 50px; height: 50px; border: 4px solid #e0e0e0;
-            border-top: 4px solid #2d6da3; border-radius: 50%; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* 优化弹窗样式 */
+        /* 信息弹窗样式 */
         .info-popup .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+
         .info-popup .leaflet-popup-content {
-            margin: 16px 20px;
+            margin: 12px 16px;
+            font-size: 14px;
             line-height: 1.8;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a3a5c;
+            border-bottom: 2px solid #2d6da3;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            color: #555;
+        }
+
+        .popup-info span {
+            color: #2d6da3;
+            font-weight: bold;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            position: absolute;
+            top: 70px;
+            left: 15px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a3a5c;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #1a3a5c;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* 图例 */
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 15px;
+            z-index: 1000;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-size: 12px;
+            line-height: 2;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #1a3a5c;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #999;
+        }
+
+        /* 加载提示 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #2d6da3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+    <!-- 加载提示 -->
     <div class="loading-overlay" id="loading">
         <div class="loading-spinner"></div>
         <div style="color:#1a3a5c; font-size:16px; font-weight:bold;">正在加载中国地图数据...</div>
     </div>
 
+    <!-- 顶部栏 -->
     <div id="header">
         <h1>🗺️ 中国各省地图</h1>
         <div class="current-location" id="currentLocation">当前视图：全国</div>
     </div>
 
+    <!-- 地图容器 -->
     <div id="map"></div>
-    <button class="back-btn" id="backBtn">← 返回全国</button>
 
+    <!-- 返回按钮 -->
+    <button class="back-btn" id="backBtn" onclick="backToChina()">← 返回全国</button>
+
+    <!-- 图例 -->
     <div class="legend">
         <div class="legend-title">图例说明</div>
         <div class="legend-item">
             <div class="legend-color" style="background:rgba(45,109,163,0.15);"></div>
-            <span>全国底图</span>
+            <span>省份区域</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background:rgba(255,152,0,0.6); border: 2px solid #e65100;"></div>
-            <span>省份高亮图层</span>
+            <div class="legend-color" style="background:rgba(45,109,163,0.4);"></div>
+            <span>鼠标悬停</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background:rgba(26,58,92,0.6);"></div>
+            <span>选中省份</span>
         </div>
     </div>
 
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         // ==================== 配置 ====================
-        const TIANDITU_TK = 'YOUR_TIANDITU_KEY'; // <-- 替换为你的天地图Key
+        // 天地图 Key（请替换为你自己申请的天地图Key）
+        // 申请地址: https://console.tianditu.gov.cn/
+        const TIANDITU_TK = 'a3d07d5c107386e408b8063af41d92e5'; // <-- 替换为你的天地图Key
 
+        // ==================== 省份中心坐标数据 ====================
         const provinceData = {
             "北京市": { center: [39.9042, 116.4074], zoom: 9, capital: "北京", area: "1.64万km²" },
             "天津市": { center: [39.0842, 117.2010], zoom: 9, capital: "天津", area: "1.19万km²" },
@@ -141,6 +266,7 @@
             "澳门特别行政区": { center: [22.1987, 113.5439], zoom: 12, capital: "澳门", area: "33km²" }
         };
 
+        // 省份简称映射（用于匹配GeoJSON中的name字段）
         const nameMapping = {
             "北京": "北京市", "天津": "天津市", "河北": "河北省", "山西": "山西省",
             "内蒙古": "内蒙古自治区", "辽宁": "辽宁省", "吉林": "吉林省", "黑龙江": "黑龙江省",
@@ -150,205 +276,348 @@
             "海南": "海南省", "重庆": "重庆市", "四川": "四川省", "贵州": "贵州省",
             "云南": "云南省", "西藏": "西藏自治区", "陕西": "陕西省", "甘肃": "甘肃省",
             "青海": "青海省", "宁夏": "宁夏回族自治区", "新疆": "新疆维吾尔自治区",
-            "台湾": "台湾省", "香港": "香港特别行政区", "澳门": "澳门特别行政区"
+            "台湾": "台湾省", "香港": "香港特别行政区", "澳门": "澳门特别行政区",
+            "北京市": "北京市", "天津市": "天津市", "河北省": "河北省", "山西省": "山西省",
+            "内蒙古自治区": "内蒙古自治区", "辽宁省": "辽宁省", "吉林省": "吉林省",
+            "黑龙江省": "黑龙江省", "上海市": "上海市", "江苏省": "江苏省",
+            "浙江省": "浙江省", "安徽省": "安徽省", "福建省": "福建省",
+            "江西省": "江西省", "山东省": "山东省", "河南省": "河南省",
+            "湖北省": "湖北省", "湖南省": "湖南省", "广东省": "广东省",
+            "广西壮族自治区": "广西壮族自治区", "海南省": "海南省", "重庆市": "重庆市",
+            "四川省": "四川省", "贵州省": "贵州省", "云南省": "云南省",
+            "西藏自治区": "西藏自治区", "陕西省": "陕西省", "甘肃省": "甘肃省",
+            "青海省": "青海省", "宁夏回族自治区": "宁夏回族自治区",
+            "新疆维吾尔自治区": "新疆维吾尔自治区", "台湾省": "台湾省",
+            "香港特别行政区": "香港特别行政区", "澳门特别行政区": "澳门特别行政区"
         };
 
         // ==================== 初始化地图 ====================
         const map = L.map('map', {
-            center: [35.8617, 104.1954],
+            center: [35.8617, 104.1954],  // 中国中心
             zoom: 4,
             minZoom: 3,
             maxZoom: 18,
             zoomControl: true
         });
 
-        const tdtVecLayer = L.tileLayer(`https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'], attribution: '© 天地图' });
-        const tdtCvaLayer = L.tileLayer(`https://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] });
-        const tdtImgLayer = L.tileLayer(`https://t{s}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] });
+        // ==================== 添加天地图图层 ====================
+        // 天地图矢量底图
+        const tdtVecLayer = L.tileLayer(
+            `https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`,
+            {
+                subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+                attribution: '© 天地图'
+            }
+        );
 
+        // 天地图矢量注记
+        const tdtCvaLayer = L.tileLayer(
+            `https://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`,
+            {
+                subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+            }
+        );
+
+        // 天地图影像底图（备选）
+        const tdtImgLayer = L.tileLayer(
+            `https://t{s}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`,
+            {
+                subdomains: ['0', '1', '2', '3', '4', '5', '6', '7']
+            }
+        );
+
+        // 添加图层
         tdtVecLayer.addTo(map);
         tdtCvaLayer.addTo(map);
 
-        const baseLayers = { "矢量地图": tdtVecLayer, "卫星影像": tdtImgLayer };
-        const overlays = { "地名注记": tdtCvaLayer };
-        const layerControl = L.control.layers(baseLayers, overlays, { position: 'topright', collapsed: false }).addTo(map);
+        // 图层控制
+        const baseLayers = {
+            "矢量地图": tdtVecLayer,
+            "卫星影像": tdtImgLayer
+        };
+        const overlays = {
+            "地名注记": tdtCvaLayer
+        };
+        L.control.layers(baseLayers, overlays, { position: 'topright' }).addTo(map);
 
+        // ==================== 全局变量 ====================
         let geojsonLayer = null;
-        let currentHighlightLayer = null;
+        let currentProvince = null;
         let provinceLabels = [];
 
-        // ==================== 加载数据 ====================
-        const GEOJSON_URL = './china.json'; 
+        // ==================== 省份颜色方案 ====================
+        const colorPalette = [
+            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+            '#1abc9c', '#e67e22', '#2980b9', '#27ae60', '#8e44ad',
+            '#d35400', '#16a085', '#c0392b', '#2c3e50', '#f1c40f'
+        ];
 
-        fetch(GEOJSON_URL)
-            .then(res => {
-                if (!res.ok) throw new Error('数据加载失败');
-                return res.json();
-            })
-            .then(data => {
-                renderProvinces(data);
-                document.getElementById('loading').style.display = 'none';
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('loading').innerHTML = '<div style="color:red;text-align:center;"><h3>地图数据加载失败</h3><p>请确保同级目录下存在 china.json 文件</p></div>';
-            });
+        function getProvinceColor(index) {
+            return colorPalette[index % colorPalette.length];
+        }
 
-        // ==================== 渲染全国底图 ====================
+        // ==================== 加载省份GeoJSON数据 ====================
+        // 使用阿里云DataV的GeoJSON数据
+        const GEOJSON_URL = './china.json';
+
+        function loadProvinces() {
+            fetch(GEOJSON_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error('数据加载失败');
+                    return response.json();
+                })
+                .then(data => {
+                    renderProvinces(data);
+                    document.getElementById('loading').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('加载省份数据失败:', error);
+                    // 尝试备用数据源
+                    loadFromBackup();
+                });
+        }
+
+        function loadFromBackup() {
+            const backupUrl = './china.json';
+            fetch(backupUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // ECharts格式转换
+                    if (data.features) {
+                        renderProvinces(data);
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('备用数据源也加载失败:', error);
+                    document.getElementById('loading').innerHTML = 
+                        '<div style="color:red;text-align:center;">' +
+                        '<h3>地图数据加载失败</h3>' +
+                        '<p>请检查网络连接或天地图Key配置</p></div>';
+                });
+        }
+
+        // ==================== 渲染省份 ====================
         function renderProvinces(geojsonData) {
-            if (geojsonLayer) map.removeLayer(geojsonLayer);
+            // 清除旧图层
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+            }
             provinceLabels.forEach(label => map.removeLayer(label));
             provinceLabels = [];
 
             geojsonLayer = L.geoJSON(geojsonData, {
-                style: {
-                    fillColor: 'rgba(45, 109, 163, 0.1)',
-                    weight: 1, opacity: 0.8, color: '#7faacc', fillOpacity: 0.1
+                style: function(feature) {
+                    return {
+                        fillColor: 'rgba(45, 109, 163, 0.15)',
+                        weight: 1.5,
+                        opacity: 1,
+                        color: '#2d6da3',
+                        dashArray: '',
+                        fillOpacity: 0.15
+                    };
                 },
                 onEachFeature: function(feature, layer) {
                     const name = feature.properties.name;
                     const fullName = nameMapping[name] || name;
 
+                    // 鼠标悬停效果
                     layer.on('mouseover', function(e) {
-                        if (!currentHighlightLayer || currentHighlightLayer.feature !== feature) {
-                            this.setStyle({ fillColor: 'rgba(45, 109, 163, 0.3)', weight: 2, color: '#1a3a5c' });
-                        }
-                        layer.bindTooltip(`<strong>${fullName}</strong><br>点击查看详情`, { sticky: true }).openTooltip(e.latlng);
+                        this.setStyle({
+                            fillColor: 'rgba(45, 109, 163, 0.4)',
+                            weight: 3,
+                            color: '#1a3a5c'
+                        });
+                        this.bringToFront();
+                        
+                        // 显示提示信息
+                        const tooltipContent = `<strong>${fullName}</strong><br>点击查看详细地图`;
+                        layer.bindTooltip(tooltipContent, {
+                            sticky: true,
+                            className: 'province-tooltip'
+                        }).openTooltip(e.latlng);
                     });
 
                     layer.on('mouseout', function(e) {
-                        if (!currentHighlightLayer || currentHighlightLayer.feature !== feature) {
+                        if (currentProvince !== fullName) {
                             geojsonLayer.resetStyle(this);
                         }
                         layer.unbindTooltip();
                     });
 
-                    // 核心点击事件
+                    // 点击事件 - 跳转到省份
                     layer.on('click', function(e) {
-                        L.DomEvent.stopPropagation(e); // 阻止事件冒泡，防止点击没反应
-                        createProvinceOverlay(feature, fullName, e.latlng);
+                        zoomToProvince(fullName, feature, layer);
                     });
 
-                    const center = feature.properties.centroid || feature.properties.center;
-                    if (center && center.length >= 2) {
-                        const label = L.marker([center[1], center[0]], {
-                            icon: L.divIcon({
-                                className: 'province-label',
-                                html: name.replace(/省|市|自治区|壮族|回族|维吾尔|特别行政区/g, ''),
-                                iconSize: [60, 20], iconAnchor: [30, 10]
-                            }),
-                            interactive: false
-                        });
-                        label.addTo(map);
-                        provinceLabels.push(label);
+                    // 添加省份名称标签
+                    if (feature.properties.center || feature.properties.centroid) {
+                        const center = feature.properties.centroid || feature.properties.center;
+                        if (center && center.length >= 2) {
+                            const label = L.marker([center[1], center[0]], {
+                                icon: L.divIcon({
+                                    className: 'province-label',
+                                    html: name.replace(/省|市|自治区|壮族|回族|维吾尔|特别行政区/g, ''),
+                                    iconSize: [60, 20],
+                                    iconAnchor: [30, 10]
+                                }),
+                                interactive: false
+                            });
+                            label.addTo(map);
+                            provinceLabels.push(label);
+                        }
                     }
                 }
             }).addTo(map);
         }
 
-        // ==================== 核心：创建独立的省份高亮图层 + 强制弹窗 ====================
-        function createProvinceOverlay(feature, provinceName, clickLatlng) {
-            // 1. 清除旧图层 (加 try-catch 防止报错中断)
-            if (currentHighlightLayer) {
-                map.removeLayer(currentHighlightLayer);
-                try { layerControl.removeLayer(currentHighlightLayer); } catch(e) {}
-            }
-            map.closePopup(); // 先关闭所有旧弹窗
-
-            // 2. 创建高亮图层
-            currentHighlightLayer = L.geoJSON(feature, {
-                style: {
-                    fillColor: '#ff9800', fillOpacity: 0.5,
-                    color: '#e65100', weight: 4, opacity: 1
-                }
-            }).addTo(map);
+        // ==================== 跳转到省份 ====================
+        function zoomToProvince(provinceName, feature, layer) {
+            const pData = provinceData[provinceName];
             
-            currentHighlightLayer.feature = feature;
-            layerControl.addOverlay(currentHighlightLayer, `📍 ${provinceName}`);
+            // 高亮选中的省份
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(function(l) {
+                    geojsonLayer.resetStyle(l);
+                });
+            }
+            
+            layer.setStyle({
+                fillColor: 'rgba(26, 58, 92, 0.6)',
+                weight: 4,
+                color: '#e74c3c',
+                fillOpacity: 0.3
+            });
+            layer.bringToFront();
 
-            // 3. 强制在点击位置弹出信息框 (解决弹窗不显示的问题)
-            const pData = provinceData[provinceName] || {};
+            currentProvince = provinceName;
+
+            // 更新UI
+            document.getElementById('currentLocation').textContent = `当前视图：${provinceName}`;
+            document.getElementById('backBtn').style.display = 'block';
+
+            // 跳转到省份
+            if (pData) {
+                map.flyTo(pData.center, pData.zoom, {
+                    duration: 1.5
+                });
+            } else if (feature) {
+                map.flyToBounds(layer.getBounds(), {
+                    padding: [50, 50],
+                    duration: 1.5
+                });
+            }
+
+            // 显示省份信息弹窗
+            const info = pData || { capital: '—', area: '—' };
             const popupContent = `
-                <div style="font-size:18px; font-weight:bold; color:#d84315; border-bottom:2px solid #ff9800; padding-bottom:6px; margin-bottom:8px;">
-                    ${provinceName}
-                </div>
-                <div style="font-size:14px; color:#333; line-height: 1.8;">
-                    <div>🏛️ <strong>省会/首府：</strong>${pData.capital || '—'}</div>
-                    <div>📐 <strong>面积：</strong>${pData.area || '—'}</div>
-                </div>
-                <div style="font-size:12px; color:#888; margin-top:10px; border-top: 1px dashed #ccc; padding-top: 6px;">
-                    💡 提示：正在尝试加载市/县级地图...<br>
-                    <span style="color:#999;">(若未显示市界，是因国外服务器访问国内数据受限)</span>
+                <div class="popup-title">${provinceName}</div>
+                <div class="popup-info">
+                    <div>🏛️ 省会/首府：<span>${info.capital}</span></div>
+                    <div>📐 面积：<span>${info.area}</span></div>
                 </div>
             `;
-            
-            L.popup({ maxWidth: 280, className: 'info-popup', closeButton: true })
-                .setLatLng(clickLatlng) // 在你鼠标点击的位置弹出
+
+            const popupCenter = pData ? pData.center : layer.getBounds().getCenter();
+            L.popup({ className: 'info-popup', maxWidth: 280 })
+                .setLatLng(popupCenter)
                 .setContent(popupContent)
                 .openOn(map);
 
-            // 4. 视角飞入
-            map.flyToBounds(currentHighlightLayer.getBounds(), {
-                padding: [50, 50], duration: 1.2, maxZoom: 8
-            });
-
-            // 5. 尝试加载下级市/县地图 (如果 403 会静默失败，不影响主流程)
-            loadSubProvince(feature);
-            
-            // 更新 UI
-            document.getElementById('currentLocation').textContent = `当前视图：${provinceName}`;
-            document.getElementById('backBtn').style.display = 'block';
+            // 加载该省份的详细边界（下一级行政区）
+            loadSubProvince(provinceName, feature);
         }
 
-        // ==================== 加载市/县级地图 (带容错处理) ====================
-        function loadSubProvince(parentFeature) {
-            const adcode = parentFeature.properties.adcode;
-            if (!adcode) return;
+        // ==================== 加载省份下级行政区 ====================
+        function loadSubProvince(provinceName, parentFeature) {
+            // 获取省份的adcode
+            let adcode = null;
+            if (parentFeature && parentFeature.properties && parentFeature.properties.adcode) {
+                adcode = parentFeature.properties.adcode;
+            }
+
+            if (!adcode) {
+                console.log('无法获取省份adcode，跳过加载下级区划');
+                return;
+            }
 
             const subUrl = `https://geo.datav.aliyun.com/areas_v3/bound/${adcode}_full.json`;
             
             fetch(subUrl)
-                .then(res => {
-                    if (!res.ok) throw new Error('市级数据 403 或 404');
-                    return res.json();
-                })
+                .then(response => response.json())
                 .then(subData => {
                     if (subData && subData.features) {
-                        const subLayer = L.geoJSON(subData, {
-                            style: { color: '#27ae60', weight: 1.5, fillColor: 'rgba(46,204,113,0.1)', fillOpacity: 0.1 },
-                            onEachFeature: function(f, l) {
-                                l.on('mouseover', function() { this.setStyle({ weight: 3, color: '#1e8449', fillOpacity: 0.3 }); });
-                                l.on('mouseout', function() { subLayer.resetStyle(this); });
-                                l.bindTooltip(f.properties.name, { sticky: true });
+                        // 添加下级行政区边界
+                        L.geoJSON(subData, {
+                            style: function(feature) {
+                                return {
+                                    fillColor: 'rgba(46, 204, 113, 0.1)',
+                                    weight: 1,
+                                    opacity: 0.8,
+                                    color: '#27ae60',
+                                    fillOpacity: 0.1
+                                };
+                            },
+                            onEachFeature: function(feature, layer) {
+                                const subName = feature.properties.name;
+                                layer.on('mouseover', function(e) {
+                                    this.setStyle({
+                                        fillColor: 'rgba(46, 204, 113, 0.35)',
+                                        weight: 2
+                                    });
+                                    layer.bindTooltip(`<strong>${subName}</strong>`, {
+                                        sticky: true
+                                    }).openTooltip(e.latlng);
+                                });
+                                layer.on('mouseout', function(e) {
+                                    this.setStyle({
+                                        fillColor: 'rgba(46, 204, 113, 0.1)',
+                                        weight: 1
+                                    });
+                                    layer.unbindTooltip();
+                                });
                             }
                         }).addTo(map);
                     }
                 })
                 .catch(err => {
-                    // 如果因为 GitHub 在国外导致 403，这里会捕获错误，不会导致页面卡死
-                    console.warn('加载市/县级地图失败 (网络或跨域限制):', err.message);
+                    console.log('加载下级区划数据失败:', err);
                 });
         }
 
         // ==================== 返回全国视图 ====================
         function backToChina() {
-            if (currentHighlightLayer) {
-                map.removeLayer(currentHighlightLayer);
-                try { layerControl.removeLayer(currentHighlightLayer); } catch(e) {}
-                currentHighlightLayer = null;
+            currentProvince = null;
+            
+            // 重置样式
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(function(l) {
+                    geojsonLayer.resetStyle(l);
+                });
             }
+
+            // 清除弹窗
             map.closePopup();
-            if (geojsonLayer) geojsonLayer.eachLayer(l => geojsonLayer.resetStyle(l));
-            map.flyTo([35.8617, 104.1954], 4, { duration: 1.2 });
+
+            // 飞回全国视图
+            map.flyTo([35.8617, 104.1954], 4, {
+                duration: 1.5
+            });
+
+            // 更新UI
             document.getElementById('currentLocation').textContent = '当前视图：全国';
             document.getElementById('backBtn').style.display = 'none';
         }
 
-        // ==================== 事件绑定 ====================
-        document.getElementById('backBtn').addEventListener('click', backToChina);
+        // ==================== 键盘快捷键 ====================
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') backToChina();
+            if (e.key === 'Escape') {
+                backToChina();
+            }
         });
+
+        // ==================== 启动 ====================
+        loadProvinces();
     </script>
 </body>
 </html>
