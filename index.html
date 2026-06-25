@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -40,28 +39,15 @@
 
         /* ==================== 独立弹窗 (Modal) 样式 ==================== */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 2000;
-            display: none; /* 默认隐藏 */
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); z-index: 2000; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
         }
-        .modal-overlay.active {
-            display: flex; /* 激活时显示 */
-        }
+        .modal-overlay.active { display: flex; }
         .modal-content {
-            background: white;
-            width: 92%;
-            height: 88%;
-            max-width: 1200px;
-            border-radius: 12px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: white; width: 92%; height: 88%; max-width: 1200px;
+            border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; overflow: hidden;
             animation: modalFadeIn 0.3s ease-out;
         }
         @keyframes modalFadeIn {
@@ -69,38 +55,29 @@
             to { opacity: 1; transform: scale(1); }
         }
         .modal-header {
-            padding: 15px 20px;
+            padding: 12px 20px;
             background: linear-gradient(135deg, #1a3a5c 0%, #2d6da3 100%);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
+            color: white; display: flex; justify-content: space-between;
+            align-items: center; flex-shrink: 0;
         }
+        .modal-title-wrapper { display: flex; align-items: center; gap: 12px; }
         .modal-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
+        
+        .back-province-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+            font-size: 13px; display: none; transition: background 0.2s;
+        }
+        .back-province-btn:hover { background: rgba(255,255,255,0.4); }
+
         .modal-close-btn {
-            background: rgba(255,255,255,0.2); 
-            border: none; 
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 20px; 
-            cursor: pointer; 
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            width: 32px; height: 32px; border-radius: 50%; font-size: 20px; 
+            cursor: pointer; line-height: 1; display: flex; align-items: center;
+            justify-content: center; transition: background 0.2s;
         }
-        .modal-close-btn:hover {
-            background: rgba(255,255,255,0.4);
-        }
-        .modal-map-container {
-            flex: 1;
-            width: 100%;
-            position: relative;
-        }
+        .modal-close-btn:hover { background: rgba(255,255,255,0.4); }
+        .modal-map-container { flex: 1; width: 100%; position: relative; }
     </style>
 </head>
 <body>
@@ -113,14 +90,16 @@
         <h1>🗺️ 中国各省地图</h1>
     </div>
 
-    <!-- 全国主地图 -->
     <div id="map"></div>
 
-    <!-- 独立的省份地图弹窗 (Modal) -->
+    <!-- 独立的省份地图弹窗 -->
     <div class="modal-overlay" id="provinceModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">省份地图</h2>
+                <div class="modal-title-wrapper">
+                    <button class="back-province-btn" id="backProvinceBtn">↩ 返回全省</button>
+                    <h2 id="modalTitle">省份地图</h2>
+                </div>
                 <button class="modal-close-btn" id="closeModalBtn">&times;</button>
             </div>
             <div class="modal-map-container" id="modalMap"></div>
@@ -129,7 +108,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ==================== 配置 ====================
         const TIANDITU_TK = 'a3d07d5c107386e408b8063af41d92e5'; 
 
         const nameMapping = {
@@ -144,9 +122,7 @@
             "台湾": "台湾省", "香港": "香港特别行政区", "澳门": "澳门特别行政区"
         };
 
-        // ==================== 初始化全国主地图 ====================
         const mainMap = L.map('map', { center: [35.8617, 104.1954], zoom: 4, minZoom: 3, maxZoom: 18 });
-
         const tdtVecLayer = L.tileLayer(`https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'], attribution: '© 天地图' });
         const tdtCvaLayer = L.tileLayer(`https://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] });
         
@@ -154,8 +130,12 @@
         tdtCvaLayer.addTo(mainMap);
 
         let chinaGeojsonLayer = null;
+        let modalMapInstance = null;
+        let currentProvinceName = '';
+        let currentCityLayer = null;
+        let provinceLayer = null;
+        let cityLayersGroup = null;
 
-        // ==================== 加载全国数据 ====================
         fetch('./china.json')
             .then(res => res.ok ? res.json() : Promise.reject('加载失败'))
             .then(data => {
@@ -166,16 +146,16 @@
                 document.getElementById('loading').innerHTML = '<div style="color:red;text-align:center;"><h3>数据加载失败</h3><p>请确保同级目录下存在 china.json</p></div>';
             });
 
-        // ==================== 渲染全国地图 ====================
         function renderNationalMap(geojsonData) {
             chinaGeojsonLayer = L.geoJSON(geojsonData, {
-                style: { fillColor: 'rgba(45, 109, 163, 0.15)', weight: 1.5, color: '#2d6da3', fillOpacity: 0.15 },
+                style: { fillColor: 'rgba(45, 109, 163, 0.1)', weight: 1, color: '#7faacc', fillOpacity: 0.1 },
                 onEachFeature: function(feature, layer) {
                     const name = feature.properties.name;
                     const fullName = nameMapping[name] || name;
 
                     layer.on('mouseover', function() {
-                        this.setStyle({ fillColor: 'rgba(45, 109, 163, 0.4)', weight: 3, color: '#1a3a5c' });
+                        // 鲜艳的高亮：亮橙色
+                        this.setStyle({ fillColor: '#ff9800', fillOpacity: 0.6, weight: 3, color: '#e65100' });
                         this.bringToFront();
                         layer.bindTooltip(`<strong>${fullName}</strong><br>点击查看独立地图`, { sticky: true }).openTooltip();
                     });
@@ -183,14 +163,11 @@
                         chinaGeojsonLayer.resetStyle(this);
                         layer.unbindTooltip();
                     });
-                    
-                    // 点击事件：打开独立弹窗
                     layer.on('click', function(e) {
                         L.DomEvent.stopPropagation(e);
                         openProvinceModal(feature, fullName);
                     });
 
-                    // 添加文字标签
                     const center = feature.properties.centroid || feature.properties.center;
                     if (center && center.length >= 2) {
                         L.marker([center[1], center[0]], {
@@ -206,66 +183,70 @@
             }).addTo(mainMap);
         }
 
-        // ==================== 核心：打开独立的省份地图弹窗 ====================
-        let modalMapInstance = null; // 存储弹窗内的地图实例
-
         function openProvinceModal(feature, provinceName) {
+            currentProvinceName = provinceName;
             const modal = document.getElementById('provinceModal');
             document.getElementById('modalTitle').textContent = `📍 ${provinceName}`;
-            
-            // 显示弹窗
             modal.classList.add('active');
 
-            // 销毁旧的地图实例，防止内存泄漏和 DOM 冲突
             if (modalMapInstance) {
                 modalMapInstance.remove();
                 modalMapInstance = null;
             }
 
-            // 延迟 100ms 初始化新地图，确保 CSS display:flex 生效后，Leaflet 才能正确计算容器尺寸
             setTimeout(() => {
-                // 1. 在弹窗内创建一个全新的地图实例
-                modalMapInstance = L.map('modalMap', {
-                    zoomControl: true,
-                    attributionControl: false
-                });
-
-                // 2. 添加天地图底图和注记
+                modalMapInstance = L.map('modalMap', { zoomControl: true, attributionControl: false });
+                
                 L.tileLayer(`https://t{s}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] }).addTo(modalMapInstance);
                 L.tileLayer(`https://t{s}.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_TK}`, { subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'] }).addTo(modalMapInstance);
 
-                // 3. 仅渲染当前点击的省份边界
-                const provinceLayer = L.geoJSON(feature, {
-                    style: { 
-                        fillColor: 'rgba(45, 109, 163, 0.25)', 
-                        weight: 3, 
-                        color: '#1a3a5c', 
-                        fillOpacity: 0.25 
-                    }
+                // 鲜艳的省界：粉红色
+                provinceLayer = L.geoJSON(feature, {
+                    style: { fillColor: '#e91e63', fillOpacity: 0.25, color: '#c2185b', weight: 3 }
                 }).addTo(modalMapInstance);
 
-                // 4. 完美居中适配该省边界 (这就是“直接显示新地图”的核心)
                 modalMapInstance.fitBounds(provinceLayer.getBounds(), { padding: [40, 40] });
-
-                // 5. 尝试加载市级边界 (静默处理 403 报错)
                 loadSubProvinceForModal(feature, modalMapInstance);
-
             }, 100); 
         }
 
-        // ==================== 关闭弹窗 ====================
-        function closeProvinceModal() {
-            const modal = document.getElementById('provinceModal');
-            modal.classList.remove('active');
+        function zoomToCity(cityFeature, cityLayer) {
+            // 淡化省界
+            provinceLayer.setStyle({ fillOpacity: 0.05, opacity: 0.3, weight: 1 });
             
-            // 销毁地图实例
-            if (modalMapInstance) {
-                modalMapInstance.remove();
-                modalMapInstance = null;
-            }
+            // 淡化其他市，高亮当前市 (亮青色)
+            cityLayersGroup.eachLayer(l => {
+                if (l === cityLayer) {
+                    l.setStyle({ fillColor: '#00bcd4', fillOpacity: 0.6, color: '#00838f', weight: 3 });
+                    l.bringToFront();
+                } else {
+                    l.setStyle({ fillOpacity: 0.05, opacity: 0.3, weight: 1 });
+                }
+            });
+            
+            modalMapInstance.fitBounds(cityLayer.getBounds(), { padding: [50, 50], maxZoom: 12 });
+            
+            document.getElementById('modalTitle').textContent = `📍 ${currentProvinceName} > ${cityFeature.properties.name}`;
+            document.getElementById('backProvinceBtn').style.display = 'inline-block';
+            currentCityLayer = cityLayer;
         }
 
-        // ==================== 加载市级边界 (在弹窗地图中) ====================
+        function backToProvince() {
+            // 恢复省界
+            provinceLayer.setStyle({ fillColor: '#e91e63', fillOpacity: 0.25, color: '#c2185b', weight: 3, opacity: 1 });
+            
+            // 恢复所有市界
+            cityLayersGroup.eachLayer(l => {
+                l.setStyle({ fillColor: 'rgba(76, 175, 80, 0.1)', fillOpacity: 0.1, color: '#388e3c', weight: 1.5, opacity: 1 });
+            });
+            
+            modalMapInstance.fitBounds(provinceLayer.getBounds(), { padding: [40, 40] });
+            
+            document.getElementById('modalTitle').textContent = `📍 ${currentProvinceName}`;
+            document.getElementById('backProvinceBtn').style.display = 'none';
+            currentCityLayer = null;
+        }
+
         function loadSubProvinceForModal(parentFeature, targetMap) {
             const adcode = parentFeature?.properties?.adcode;
             if (!adcode) return;
@@ -274,36 +255,57 @@
                 .then(res => res.ok ? res.json() : Promise.reject())
                 .then(subData => {
                     if (subData?.features && targetMap) { 
-                        L.geoJSON(subData, {
-                            style: { color: '#27ae60', weight: 1.5, fillColor: 'rgba(46,204,113,0.1)', fillOpacity: 0.1 },
+                        cityLayersGroup = L.geoJSON(subData, {
+                            style: { color: '#388e3c', weight: 1.5, fillColor: 'rgba(76, 175, 80, 0.1)', fillOpacity: 0.1 },
                             onEachFeature: function(f, l) {
-                                l.on('mouseover', function() { this.setStyle({ weight: 3, fillOpacity: 0.3 }); });
-                                l.on('mouseout', function() { this.setStyle({ weight: 1.5, fillOpacity: 0.1 }); });
+                                l.on('mouseover', function() { 
+                                    if (currentCityLayer !== l) {
+                                        this.setStyle({ weight: 2.5, fillOpacity: 0.4, fillColor: 'rgba(76, 175, 80, 0.4)' }); 
+                                    }
+                                });
+                                l.on('mouseout', function() { 
+                                    if (currentCityLayer !== l) {
+                                        this.setStyle({ weight: 1.5, fillOpacity: 0.1, fillColor: 'rgba(76, 175, 80, 0.1)' }); 
+                                    }
+                                });
+                                l.on('click', function(e) {
+                                    L.DomEvent.stopPropagation(e);
+                                    zoomToCity(f, l);
+                                });
                                 l.bindTooltip(f.properties.name, { sticky: true });
                             }
                         }).addTo(targetMap);
                     }
                 })
-                .catch(() => {}); // 静默忽略 403 错误
+                .catch(() => {
+                    // 403 报错时的友好提示
+                    const tip = L.control.attribution({ prefix: '' });
+                    tip.addAttribution('<span style="color:#d32f2f; font-weight:bold; background:rgba(255,255,255,0.8); padding:2px 6px; border-radius:4px;">⚠️ 受 GitHub 国外网络限制，市级数据加载失败(403)。部署到国内服务器即可正常显示。</span>');
+                    tip.addTo(targetMap);
+                });
         }
 
-        // ==================== 事件绑定 (严格遵守 addEventListener 规范) ====================
-        
-        // 绑定关闭按钮
-        document.getElementById('closeModalBtn').addEventListener('click', closeProvinceModal);
-        
-        // 点击弹窗外部遮罩层关闭
-        document.getElementById('provinceModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeProvinceModal();
+        function closeProvinceModal() {
+            document.getElementById('provinceModal').classList.remove('active');
+            if (modalMapInstance) {
+                modalMapInstance.remove();
+                modalMapInstance = null;
             }
+            currentCityLayer = null;
+            currentProvinceName = '';
+            document.getElementById('backProvinceBtn').style.display = 'none';
+        }
+
+        // ==================== 事件绑定 ====================
+        document.getElementById('closeModalBtn').addEventListener('click', closeProvinceModal);
+        document.getElementById('backProvinceBtn').addEventListener('click', backToProvince);
+        
+        document.getElementById('provinceModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProvinceModal();
         });
 
-        // 按 ESC 键关闭弹窗
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeProvinceModal();
-            }
+            if (e.key === 'Escape') closeProvinceModal();
         });
     </script>
 </body>
